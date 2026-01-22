@@ -46,6 +46,18 @@ case $_arg_action in
         ;;
     esac
     ;;
+  beep)
+   case $_arg_value in
+      on|1|true|yes|enable*|start)
+        [ "$_arg_verbose" -ge 1 ] && echo "Enabling beep"
+        aio_args+=( set D03130=100  -I)
+        ;;
+       *)
+        [ "$_arg_verbose" -ge 1 ] && echo "Disabling beep"
+        aio_args+=(set D03130=0  -I)
+        ;;
+    esac
+    ;;
   mode)
     case $_arg_value in
       0|off|vent*)

@@ -9,7 +9,7 @@ the available actions are:
   swing [on|off]             - enable or disable swing mode
   mode [vent|low|high|auto]  - set the operating mode
   set_temp|temp [1-37]      - set target temperature (1-37 degrees Celsius) and enable auto mode
-
+  beep [on|off]             - enable or disable beep sound
 EOH
 )
 # m4_ignore(
