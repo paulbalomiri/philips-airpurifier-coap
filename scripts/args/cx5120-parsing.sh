@@ -17,7 +17,8 @@ The actions 'status' and 'beep' are exempted from this restriction and will alwa
 --restriction-to-beep-disabled needs the jq (JSON processor) command line tool to be installed.
 
 
-Using --restriction-to-pingable option, only executes the action if the device is pingable.
+Supplying --no-restriction-to-pingable will send commands regardless of whether the device is pingable or not.
+By default, the script will only send commands if the device is pingable.
 
 Use -v to increase verbosity, can be supplied multiple times for more verbosity. supplyiong it one time
 logs major steps and restriction statuses, supplying it twice logs the actual aioairctrl commands that are executed.
@@ -29,7 +30,7 @@ EOH
 # ARG_POSITIONAL_SINGLE([action])
 # ARG_POSITIONAL_SINGLE([value],["The value associated with the action"],[""])
 # ARG_OPTIONAL_BOOLEAN([restriction-to-beep-disabled],[B],[Restrict actions and only act if beep is disabled],[off])
-# ARG_OPTIONAL_BOOLEAN([restriction-to-pingable],[P],[Restrict actions and only act if beep is disabled],[off])
+# ARG_OPTIONAL_BOOLEAN([restriction-to-pingable],[],[Restrict actions and only act if ],[on])
 
 # ARG_DEFAULTS_POS()
 # ARG_HELP([Script for controlling Philips CX5120 (Philips heater series 5000) air purifier via aioairctrl.],[$EXTENDED_HELP])
@@ -52,7 +53,7 @@ die()
 
 begins_with_short_option()
 {
-	local first_option all_short_options='dBPhv'
+	local first_option all_short_options='dBhv'
 	first_option="${1:0:1}"
 	test "$all_short_options" = "${all_short_options/$first_option/}" && return 1 || return 0
 }
@@ -64,18 +65,18 @@ _arg_value=""
 # THE DEFAULTS INITIALIZATION - OPTIONALS
 _arg_device="$AIOAIR_DEVICE_IP"
 _arg_restriction_to_beep_disabled="off"
-_arg_restriction_to_pingable="off"
+_arg_restriction_to_pingable="on"
 _arg_verbose=0
 
 
 print_help()
 {
 	printf '%s\n' "Script for controlling Philips CX5120 (Philips heater series 5000) air purifier via aioairctrl."
-	printf 'Usage: %s [-d|--device <arg>] [-B|--(no-)restriction-to-beep-disabled] [-P|--(no-)restriction-to-pingable] [-h|--help] [-v|--verbose] <action> [<value>]\n' "$0"
+	printf 'Usage: %s [-d|--device <arg>] [-B|--(no-)restriction-to-beep-disabled] [--(no-)restriction-to-pingable] [-h|--help] [-v|--verbose] <action> [<value>]\n' "$0"
 	printf '\t%s\n' "<value>: \"The value associated with the action\" (default: '""')"
 	printf '\t%s\n' "-d, --device: The device to control (default: '"$AIOAIR_DEVICE_IP"')"
 	printf '\t%s\n' "-B, --restriction-to-beep-disabled, --no-restriction-to-beep-disabled: Restrict actions and only act if beep is disabled (off by default)"
-	printf '\t%s\n' "-P, --restriction-to-pingable, --no-restriction-to-pingable: Restrict actions and only act if beep is disabled (off by default)"
+	printf '\t%s\n' "--restriction-to-pingable, --no-restriction-to-pingable: Restrict actions and only act if  (on by default)"
 	printf '\t%s\n' "-h, --help: Prints help"
 	printf '\t%s\n' "-v, --verbose: Set verbose output (can be specified multiple times to increase the effect)"
 	printf '\n%s\n' "$EXTENDED_HELP"
@@ -113,17 +114,9 @@ parse_commandline()
 					{ begins_with_short_option "$_next" && shift && set -- "-B" "-${_next}" "$@"; } || die "The short option '$_key' can't be decomposed to ${_key:0:2} and -${_key:2}, because ${_key:0:2} doesn't accept value and '-${_key:2:1}' doesn't correspond to a short option."
 				fi
 				;;
-			-P|--no-restriction-to-pingable|--restriction-to-pingable)
+			--no-restriction-to-pingable|--restriction-to-pingable)
 				_arg_restriction_to_pingable="on"
 				test "${1:0:5}" = "--no-" && _arg_restriction_to_pingable="off"
-				;;
-			-P*)
-				_arg_restriction_to_pingable="on"
-				_next="${_key##-P}"
-				if test -n "$_next" -a "$_next" != "$_key"
-				then
-					{ begins_with_short_option "$_next" && shift && set -- "-P" "-${_next}" "$@"; } || die "The short option '$_key' can't be decomposed to ${_key:0:2} and -${_key:2}, because ${_key:0:2} doesn't accept value and '-${_key:2:1}' doesn't correspond to a short option."
-				fi
 				;;
 			-h|--help)
 				print_help

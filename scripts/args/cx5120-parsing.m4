@@ -17,7 +17,8 @@ The actions 'status' and 'beep' are exempted from this restriction and will alwa
 --restriction-to-beep-disabled needs the jq (JSON processor) command line tool to be installed.
 
 
-Using --restriction-to-pingable option, only executes the action if the device is pingable.
+Supplying --no-restriction-to-pingable will send commands regardless of whether the device is pingable or not.
+By default, the script will only send commands if the device is pingable.
 
 Use -v to increase verbosity, can be supplied multiple times for more verbosity. supplyiong it one time
 logs major steps and restriction statuses, supplying it twice logs the actual aioairctrl commands that are executed.
@@ -31,7 +32,7 @@ exit 11  #)Created by argbash-init v2.11.0
 # ARG_POSITIONAL_SINGLE([action])
 # ARG_POSITIONAL_SINGLE([value],["The value associated with the action"],[""])
 # ARG_OPTIONAL_BOOLEAN([restriction-to-beep-disabled],[B],[Restrict actions and only act if beep is disabled],[off])
-# ARG_OPTIONAL_BOOLEAN([restriction-to-pingable],[P],[Restrict actions and only act if beep is disabled],[off])
+# ARG_OPTIONAL_BOOLEAN([restriction-to-pingable],[],[Restrict actions and only act if ],[on])
 
 # ARG_DEFAULTS_POS
 # ARG_HELP([Script for controlling Philips CX5120 (Philips heater series 5000) air purifier via aioairctrl.],[$EXTENDED_HELP])
