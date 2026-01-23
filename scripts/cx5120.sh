@@ -100,6 +100,14 @@ function run_command() {
   ${aio_args[@]}
 }
 
+if [ "$_arg_restriction_to_pingable" = "on" ]; then
+  if ! ping -c 1 -W 1 "$_arg_device" &> /dev/null; then
+    [ "$_arg_verbose" -ge 1 ] && echo "Device $_arg_device is not pingable, skipping action $_arg_action"
+    exit 0
+  else
+    [ "$_arg_verbose" -ge 1 ] && echo "Device $_arg_device is pingable, proceeding with action $_arg_action"
+  fi
+fi
 
 if [ "$_arg_restriction_to_beep_disabled" = "on" ] && [ "${_arg_action}" != "status" ] && [ "${_arg_action}" != "beep" ]; then
   status=$(get_status)
