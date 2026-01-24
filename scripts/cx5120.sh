@@ -20,10 +20,51 @@ script_dir="$(cd "$(dirname "$(readlink -e "${BASH_SOURCE[0]}")")" && pwd)"
 function get_status() {
   aioairctrl --host "$_arg_device" status -J
 }
-
+function resolve_setting() {
+  local setting_name="$1"
+  case $setting_name in
+    D03102|power)
+      echo "D03102"
+      ;;
+    D03108|mode)
+      echo "D03108"
+      ;;
+    D0310C|fan_level)
+      echo "D0310C"
+      ;;
+    D0310E|target_temperature|temperature|temp)
+      echo "D0310E"
+      ;;
+    D0320F|swing)
+      echo "D0320F"
+      ;;
+    D03130|beep)
+      echo "D03130"
+      ;;
+    D01S03|device_name|name)
+      echo "D01S03"
+      ;;
+    *)
+      echo "$setting_name"
+      ;;
+  esac
+}
+function typeof_setting() {
+  local setting_name="$1"
+  case $setting_name in
+    D01S03|device_name|name|ProductId|DeviceId|WifiVersion|StatusType|ConnectionType|D01S05|D01S04)
+      echo "str"
+      ;;
+    *)
+      echo "int"
+      ;;
+  esac
+}
 
 function run_command() {
   aio_args=( aioairctrl --host $_arg_device)
+  local _arg_action="${_arg_action_with_args[0]}"
+  _arg_action_with_args=( "${_arg_action_with_args[@]:1}" )
   case $_arg_action in
     status)
       [ "$_arg_verbose" -ge 1 ] && echo "Getting status"
@@ -31,16 +72,39 @@ function run_command() {
       aio_args=( echo "${status}" )
       ;;
     start|on)
-      [ -n "$_arg_value" ] || _arg_value=1
       [ "$_arg_verbose" -ge 1 ] && echo "Starting device"
-      aio_args+=( set D03102=${_arg_value} -I )
+      aio_args+=( set D03102=1 -I )
       ;;
     stop|off)
-      [ -n "$_arg_value" ] || _arg_value=0
       [ "$_arg_verbose" -ge 1 ] && echo "Stopping device"
-      aio_args+=( set D03102=${_arg_value} -I )
+      aio_args+=( set D03102=0 -I )
+      ;;
+    set)
+      local set_count=0
+      set -f # avoid globbing (expansion of *)
+      local key_value=(${_arg_action_with_args[0]//"="/ })
+      local type=$(typeof_setting ${key_value[0]})
+      while [[ "${#key_value[@]}" -eq 2 ]]; do
+        if [[ "$set_count" -eq 0 ]]; then 
+          aio_args+=( set )
+          [ "$type" = "int" ] && aio_args+=( -I ) 
+        elif ! [ "$type" == $(typeof_setting "${key_value[0]}") ]; then
+          # type changed, stop processing, let the processing continue in 
+          # next run_command call 
+          _arg_action_with_args=( set "${_arg_action_with_args[@]}" )
+          break;
+        fi
+        ((set_count++))
+        
+        aio_args+=( "$(resolve_setting ${key_value[0]})=${key_value[1]}" )
+        _arg_action_with_args=( "${_arg_action_with_args[@]:1}" )
+        key_value=(${_arg_action_with_args[0]//"="/ })
+      done
+      set +f # turn globbing back on
       ;;
     swing)
+      local _arg_value="${_arg_action_with_args[0]}"
+      _arg_action_with_args=( "${_arg_action_with_args[@]:1}" )
       case $_arg_value in
         on|1|true|yes|enable*|start)
           [ "$_arg_verbose" -ge 1 ] && echo "Setting swing to: $_arg_value"
@@ -53,7 +117,10 @@ function run_command() {
       esac
       ;;
     beep)
-    case $_arg_value in
+      local _arg_value="${_arg_action_with_args[0]}"
+      _arg_action_with_args=( "${_arg_action_with_args[@]:1}" )
+      
+      case $_arg_value in
         on|1|true|yes|enable*|start)
           [ "$_arg_verbose" -ge 1 ] && echo "Enabling beep"
           aio_args+=( set D03130=100  -I)
@@ -65,6 +132,8 @@ function run_command() {
       esac
       ;;
     mode)
+      local _arg_value="${_arg_action_with_args[0]}"
+      _arg_action_with_args=( "${_arg_action_with_args[@]:1}" )
       case $_arg_value in
         0|off|vent*)
           [ "$_arg_verbose" -ge 1 ] && echo "Setting mode to ventilator"
@@ -85,6 +154,8 @@ function run_command() {
       esac
       ;;
     set_temp|temp*)
+      local $_arg_value="${_arg_action_with_args[0]}"
+      _arg_action_with_args=( "${_arg_action_with_args[@]:1}" )
       if ! ([[ "$_arg_value" =~ ^[0-9]+$ ]] && [ "$_arg_value" -ge "1" ] && [ "$_arg_value" -le "37" ]); then
         die "Temperature value must be an integer between 1 anf 37, got: $_arg_value" 1
       fi
@@ -119,7 +190,10 @@ if [ "$_arg_restriction_to_beep_disabled" = "on" ] && [ "${_arg_action}" != "sta
     [ "$_arg_verbose" -ge 1 ] && echo "Beep is disabled (D03130=$beep_status), proceeding with action $_arg_action"
   fi
 fi
-run_command
+while [ "${#_arg_action_with_args[@]}" -gt 0 ]; do
+  # run_command consumes first action and its arguments from _arg_action_with_args array
+  run_command
+done
 
 
 # ^^^  TERMINATE YOUR CODE BEFORE THE BOTTOM ARGBASH MARKER  ^^^

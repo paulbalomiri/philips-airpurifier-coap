@@ -2,14 +2,16 @@
 
 EXTENDED_HELP=$(cat <<- EOH
 Script for controlling Philips CX5120 (Philips heater series 5000) air purifier via aioairctrl.
-the available actions are:
-  status                     - get the current status of the device
-  start|on [value]           - start the device, optional value to send as D03102 (default: 1, should not be changed)
-  stop|off [value]           - stop the device, optional value to send as D03102 (default: 0, should not be changed)
-  swing [on|off]             - enable or disable swing mode
-  mode [vent|low|high|auto]  - set the operating mode
-  set_temp|temp [1-37]      - set target temperature (1-37 degrees Celsius) and enable auto mode
-  beep [on|off]             - enable or disable beep sound
+the available actions aqnd arguments are:
+  status                        - get the current status of the device
+  start|on                      - start the device
+  stop|off                      - stop the device
+  swing on|off                  - enable or disable swing mode
+  mode vent|low|high|auto       - set the operating mode
+  set_temp|temp [1-37]          - set target temperature (1-37 degrees Celsius) and enable auto mode
+  beep on|off                   - enable or disable beep sound
+  set key=value [key=value ...] - set one or more settings by their key names. any key returned by 'status' can be set this way, but without any checks. 
+                                  prefer e.g. set_temp for the range check.
 
 Using --restriction-to-beep-disabled option, only executes the action if the beep is disabled.
 This makes it possible to turn off the device automation using this script by enabling the beep. The script will then not intervene on top of user automation.
@@ -29,8 +31,7 @@ EOH
 echo "This is just a parsing library template, not the library - pass this file to 'argbash' to fix this." >&2
 exit 11  #)Created by argbash-init v2.11.0
 # ARG_OPTIONAL_SINGLE([device],[d],[The device to control],["$AIOAIR_DEVICE_IP"])
-# ARG_POSITIONAL_SINGLE([action])
-# ARG_POSITIONAL_SINGLE([value],["The value associated with the action"],[""])
+# ARG_POSITIONAL_INF([action_with_args],[The action followed by its arguments multiple actions followed by their arguments can be supplied])
 # ARG_OPTIONAL_BOOLEAN([restriction-to-beep-disabled],[B],[Restrict actions and only act if beep is disabled],[off])
 # ARG_OPTIONAL_BOOLEAN([restriction-to-pingable],[],[Restrict actions and only act if ],[on])
 
